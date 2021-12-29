@@ -1,9 +1,11 @@
 package org.firstinspires.ftc.teamcode.PI_RHO_BASE;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
 
 
 public class PiRhoHWMap {
@@ -13,6 +15,14 @@ public class PiRhoHWMap {
     public DcMotorEx backleft;
     public DcMotorEx frontright;
     public DcMotorEx backright;
+    public DcMotorEx intake;
+    public DcMotorEx lift;
+    public DcMotorEx duckwheel;
+
+    public Servo bucket;
+    public CRServo intakeservo;
+
+
     private BNO055IMU imu;
 
     private double WHEEL_DIAMETER = 3.7795276;
@@ -28,19 +38,30 @@ public class PiRhoHWMap {
 
 
     public PiRhoHWMap(HardwareMap hardwaremap) {
-        frontleft = hardwaremap.get(DcMotorEx.class,"FrontLeft");
-        backleft = hardwaremap.get(DcMotorEx.class,"BackLeft");
-        frontright = hardwaremap.get(DcMotorEx.class,"FrontRight");
-        backright = hardwaremap.get(DcMotorEx.class,"BackRight");
+        frontleft = hardwaremap.get(DcMotorEx.class,"frontleft");
+        backleft = hardwaremap.get(DcMotorEx.class,"backleft");
+        frontright = hardwaremap.get(DcMotorEx.class,"frontright");
+        backright = hardwaremap.get(DcMotorEx.class,"backright");
+        duckwheel = hardwaremap.get(DcMotorEx.class, "duckwheel");
+        lift = hardwaremap.get(DcMotorEx.class, "lift");
+        imu = hardwaremap.get(BNO055IMU.class, "imu");
+        bucket = hardwaremap.get(Servo.class, "bucketservo");
+        intakeservo = hardwaremap.get(CRServo.class, "intakeservo");
+        intake = hardwaremap.get(DcMotorEx.class, "intake");
+
+
+
         frontleft.setDirection(DcMotorEx.Direction.FORWARD);
         backleft.setDirection(DcMotorEx.Direction.FORWARD);
         frontright.setDirection(DcMotorEx.Direction.REVERSE);
         backright.setDirection(DcMotorEx.Direction.REVERSE);
+
         frontleft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frontright.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backleft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backright.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        imu = hardwaremap.get(BNO055IMU.class, "imu");
+        lift.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
         parameters.mode = BNO055IMU.SensorMode.IMU;
         parameters.angleUnit = BNO055IMU.AngleUnit.RADIANS;
@@ -70,6 +91,8 @@ public class PiRhoHWMap {
         frontright.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         backright.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
+
+
 
     public void drive(double inches){
         resetencoder();
@@ -130,6 +153,22 @@ public class PiRhoHWMap {
             angle -= 2.0* Math.PI;
         }
         return angle;
+    }
+
+    public void setIntakePower(double power){
+        intake.setPower(power);
+        intakeservo.setPower(power);
+
+    }
+
+    public void setLiftPower(double power){
+        lift.setPower(power);
+
+    }
+
+    public void setDuckWheel (double power) {
+        duckwheel.setPower(power);
+
     }
 
 }
