@@ -17,12 +17,16 @@ public class PIRhoPID {
     public double calculate(double error){
         double p = error * Kp;
         integral_sum += error * timer.seconds();
+        if (error > 0 && previousError < 0 || error < 0 && previousError > 0) {
+            integral_sum = 0;
+        }
         derivative = (error - previousError)/timer.seconds();
         double d = Kd * derivative;
         double i = integral_sum * Ki;
         double output = p + i + d;
         // reset timer for the delta time between loops
         timer.reset();
+        previousError = error;
         return output;
     }
 

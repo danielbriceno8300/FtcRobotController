@@ -8,6 +8,8 @@ public abstract class PiRhoBaseAuto extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         robot = new PiRhoHWMap(hardwareMap);
+        telemetry.addData("Ready for start","Yes");
+        telemetry.update();
         waitForStart();
         actions();
     }

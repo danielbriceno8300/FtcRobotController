@@ -7,7 +7,6 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
-
 public class PiRhoHWMap {
 
     private static double TAU = Math.PI * 2;
@@ -18,23 +17,26 @@ public class PiRhoHWMap {
     public DcMotorEx intake;
     public DcMotorEx lift;
     public DcMotorEx duckwheel;
+    public DcMotorEx capArm;
 
     public Servo bucket;
     public CRServo intakeservo;
+    public CRServo capServo;
+    public CRServo bottomCapServo;
 
 
     private BNO055IMU imu;
 
-    private double WHEEL_DIAMETER = 3.7795276;
+    private double WHEEL_DIAMETER = 4.72441;
     //find wheel diameter on gobilda in mm to inches
     private double WHEEL_RADIUS = WHEEL_DIAMETER / 2;
     private double GEAR_RATIO = 1;
     // change to 20 instead of 13.7
-    private double TICKS_PER_REV = 28 * 13.7;
+    private double TICKS_PER_REV = 28 * 19.2;
 
-    private double turnKp = 0.5;
-    private double turnKi = 0;
-    private double turnKd = 0;
+    private double turnKp = 0.75;
+    private double turnKi = 0.5;
+    private double turnKd = 0.1;
 
 
     public PiRhoHWMap(HardwareMap hardwaremap) {
@@ -48,19 +50,22 @@ public class PiRhoHWMap {
         bucket = hardwaremap.get(Servo.class, "bucketservo");
         intakeservo = hardwaremap.get(CRServo.class, "intakeservo");
         intake = hardwaremap.get(DcMotorEx.class, "intake");
-
-
+        capArm = hardwaremap.get(DcMotorEx.class,"capArm");
+        capServo = hardwaremap.get(CRServo.class, "capServo");
+        bottomCapServo = hardwaremap.get(CRServo.class, "bottomCapServo");
 
         frontleft.setDirection(DcMotorEx.Direction.FORWARD);
         backleft.setDirection(DcMotorEx.Direction.FORWARD);
         frontright.setDirection(DcMotorEx.Direction.REVERSE);
         backright.setDirection(DcMotorEx.Direction.REVERSE);
+        capArm.setDirection(DcMotorEx.Direction.REVERSE);
 
         frontleft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frontright.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backleft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backright.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         lift.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        capArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
         parameters.mode = BNO055IMU.SensorMode.IMU;
@@ -96,13 +101,13 @@ public class PiRhoHWMap {
 
     public void drive(double inches){
         resetencoder();
-        PIRhoPID controller = new PIRhoPID(.09, 0, 0);
+        PIRhoPID controller = new PIRhoPID(.69, 0, 0);
         PIRhoPID angleController = new PIRhoPID(turnKp, turnKi, turnKd);
         double initialAngle = imu.getAngularOrientation().firstAngle;
         double distanceTraveled = 0;
         double error = inches - distanceTraveled;
         double angleError = 0;
-        while (Math.abs(error) > 1 || encoderTicksToInches(Math.abs(frontleft.getVelocity())) > 1 || Math.abs(angleError) > Math.toRadians(3)){
+        while (Math.abs(error) > 1 || Math.abs(angleError) > Math.toRadians(3)){
 
             distanceTraveled = encoderTicksToInches((double)frontleft.getCurrentPosition()
                     + (double)frontright.getCurrentPosition()) / 2;
@@ -128,10 +133,13 @@ public class PiRhoHWMap {
             double power = angleController.calculate(error);
             robotrelative(0, power);
             System.out.println("error is " + error + " derivative is " + angleController.derivative + " 3 degrees is " + Math.toRadians(3));
-        } while(Math.abs(error) > Math.toRadians(2) || Math.abs(angleController.derivative) > 15);
+            initialAngle = 0;
+        }
+        while(Math.abs(error) > Math.toRadians(2) || Math.abs(angleController.derivative) > Math.toRadians(15));
         robotrelative(0,0);
     }
-    public double encoderTicksToInches(double ticks) {
+    public double encoderTicksToInches(double ticks)
+    {
         return WHEEL_RADIUS * 2 * Math.PI * GEAR_RATIO * ticks / TICKS_PER_REV;
     }
 
@@ -164,6 +172,21 @@ public class PiRhoHWMap {
     public void setLiftPower(double power){
         lift.setPower(power);
 
+    }
+    //sends power to the cap arm mechanism
+    public void setCapArmMotor(double power)
+    {
+        capArm.setPower(power);
+    }
+
+    public void setCapServoPower(double power)
+    {
+        capServo.setPower(power);
+    }
+
+    public void setBottomCapServo(double power)
+    {
+        bottomCapServo.setPower(power);
     }
 
     public void setDuckWheel (double power) {
